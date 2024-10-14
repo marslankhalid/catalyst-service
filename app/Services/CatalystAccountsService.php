@@ -72,9 +72,9 @@ class CatalystAccountsService
         /*if (!$setting = CatalystApiSetting::where('status', 1)->first()) {
             $setting = $this->isAuthenticate();
         }*/
-        $setting = $this->isAuthenticate();
-        $this->token = $setting->token ?? null;
-        $this->branchDetail = $setting ? json_decode($setting->response_data)->return->branchWSList[0] : (object)[];
+        //$setting = $this->isAuthenticate();
+        $this->token = '0BDCD5C39B477CA1A1F703AA1FF1D735B97DC4BB';//$setting->token ?? null;
+        //$this->branchDetail = $setting ? json_decode($setting->response_data)->return->branchWSList[0] : (object)[];
 
         return Soap::baseWsdl($this->serviceUrl)
             ->withHeaders(['username' => $this->username, 'token' => $this->token]);
@@ -125,14 +125,15 @@ class CatalystAccountsService
         });
     }
 
-    public function getInvoiceLedger()
+    public function getInvoiceLegder()
     {
         $response = $this->soapClient()
-            ->call('getInvoiceLedger', [
-                'fromInvoiceDate' => null,
-                'toInvoiceDate' => null,
-                'invoiceNumber' => null,
-                'customerId' => '2100000000000001'
+            ->call('getInvoiceLegder', [
+                'fromInvoiceDate' => '1709014105000',
+                'toInvoiceDate' => '1709014105000',
+                'invoiceNumber' => 'SI202402270009',
+                'customerId' => '2100000000000001',
+                'adjustDate' => '0'
             ]);
         if ($response->failed()) {
             return $this->handleFailedRequest($response, __FUNCTION__);
@@ -143,7 +144,7 @@ class CatalystAccountsService
 
     public function getTourInvoice()
     {
-        $response = $this->soapClient()->call('getTourInvoice', ['invoiceNumber' => 1]);
+        $response = $this->soapClient()->call('getTourInvoice', ['invoiceNumber' => 'SI202402270009', 'branchId' => '2100000000000001']);
 
         if ($response->failed()) {
             return $this->handleFailedRequest($response, __FUNCTION__);
@@ -151,14 +152,14 @@ class CatalystAccountsService
         return $response->object();
     }
 
-    public function createTourInvoice(): object
+    public function createTicketInvoice(): object
     {
         $client = $this->soapClient();
         $dated = now()->getTimestampMs();
 
         $requestParams = [
             'generalInformationRequest' => [
-                'branchXid' => (string)$this->branchDetail->id,
+                'branchXid' => '2100000000000001',//(string)$this->branchDetail->id,
                 'invoiceDate' => $dated,
                 'adjustmentDate' => $dated,
                 'customerId' => "2100000000000001",
@@ -168,7 +169,7 @@ class CatalystAccountsService
                 'staff' => '',
                 'spoXid' => '',#
                 'saleInvoiceStatus' => '',
-                'visitTypeXid' => '10005',
+                'visitTypeXid' => '',
                 'nameOnVoice' => 'Muhammad Arslan Dev',
                 'creditCardNumber' => '',
                 'clientExchangeOrder' => '',
@@ -180,6 +181,7 @@ class CatalystAccountsService
                     'paxName' => 'Muhammad Arslan',
                     'paxTypeXid' => "10001",
                     'passportNumber' => '',
+                    'passportStatus' => '',
                     'passportIssueDate' => '',
                     'ntn' => '',
                     'nationality' => '',
@@ -202,7 +204,7 @@ class CatalystAccountsService
                 'ticketType' => "1", //domestic
                 'ourXo' => "123", //'E',
                 'tourCode' => '',
-                'documentType' => '3',
+                'documentType' => '4',
                 'autoNumber' => '',
                 'gds' => '',
                 'pnrGroup' => '',
@@ -233,7 +235,7 @@ class CatalystAccountsService
             ]
         ];
 
-        $response = $client->call('createTourInvoice', $requestParams);
+        $response = $client->call('createTicketInvoice', $requestParams);
 
         if ($response->failed()) {
             return $this->handleFailedRequest($response, __FUNCTION__);
@@ -243,13 +245,13 @@ class CatalystAccountsService
 
     private function handleFailedRequest($response, $callback)
     {
-        if ($response->body() === 'Invalid token') {
+        /*if ($response->body() === 'Invalid token') {
             $reAuthenticate = $this->isAuthenticate();
             if ($reAuthenticate instanceof CatalystApiSetting) {
                 return $this->$callback();
             }
             return $reAuthenticate;
-        }
+        }*/
 
         return (object)['code' => $response->status(), 'message' => $response->body()];
     }
